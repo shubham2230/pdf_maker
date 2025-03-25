@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to JPG - PDF Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: white;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p.subtitle {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .file-upload-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-upload-container p {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-button:hover {
+            background-color: #3367d6;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .selected-file {
+            margin: 20px 0;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .selected-file p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .convert-button {
+            background-color: #ea4335;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .convert-button:hover {
+            background-color: #d33426;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .convert-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4285f4;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .download-button {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            margin-top: 15px;
+        }
+        
+        .download-button:hover {
+            background-color: #2d9144;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .steps-container {
+            margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .steps-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .steps-list {
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+        
+        .steps-list li {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        
+        .info-box {
+            background-color: rgba(66, 133, 244, 0.2);
+            border-left: 4px solid #4285f4;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .info-box p {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .info-box .note {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-button" onclick="window.location.href='merge-pdf.html'">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button active" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>Convert PDF to JPG</h1>
+        <p class="subtitle">Upload a PDF file and convert it to high-quality JPG images. Each page will be converted to a separate image file.</p>
+        
+        <div class="file-upload-container">
+            <div class="file-input-wrapper">
+                <button class="file-input-button">Select PDF File</button>
+                <input type="file" id="upload" accept=".pdf">
+            </div>
+            
+            <div class="selected-file" id="selected-file">
+                <p>No file selected yet</p>
+            </div>
+            
+            <button class="convert-button" id="convert-button" disabled>Convert to JPG</button>
+            
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Preparing document conversion...</div>
+            </div>
+            
+            <div class="result-container" id="result-container">
+                <p>Your PDF file has been successfully converted to JPG images!</p>
+                <button class="download-button" id="download-button">Download JPG Files</button>
+            </div>
+            
+            <div class="info-box">
+                <h3>Important Note</h3>
+                <p>This converter processes your PDF entirely in your browser:</p>
+                <ul style="margin-left: 20px; margin-bottom: 10px;">
+                    <li>Converts each PDF page to a separate JPG image</li>
+                    <li>Maintains high image quality and resolution</li>
+                    <li>No server required - all conversion happens locally</li>
+                    <li>Your files never leave your computer for complete privacy</li>
+                </ul>
+                <p class="note">For large PDF files, the conversion may take a bit longer as it's processing everything in your browser.</p>
+            </div>
+        </div>
+        
+        <div class="steps-container">
+            <h2>How It Works</h2>
+            <ol class="steps-list">
+                <li>Upload your PDF file</li>
+                <li>Your browser renders each page of the PDF</li>
+                <li>Pages are converted to high-quality JPG images</li>
+                <li>Download all images as a ZIP file</li>
+            </ol>
+            <p style="margin-top: 15px; text-align: center;">The entire conversion process happens in your browser - no data is sent to any server.</p>
+        </div>
+    </main>
+    
+    <!-- PDF-LIB for client-side PDF creation -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- PDF.js for PDF rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
+    <!-- JSZip for creating ZIP files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <script>
+        // Initialize Vanta.js background with waves effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+        
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+        
+        // PDF to JPG conversion functionality
+        const uploadInput = document.getElementById("upload");
+        const selectedFileDiv = document.getElementById("selected-file");
+        const convertButton = document.getElementById("convert-button");
+        const progressContainer = document.getElementById("progress-container");
+        const progressFill = document.getElementById("progress-fill");
+        const progressText = document.getElementById("progress-text");
+        const resultContainer = document.getElementById("result-container");
+        const downloadButton = document.getElementById("download-button");
+        
+        let pdfFile = null;
+        let pdfName = "";
+        let convertedJpgBlobs = [];
+        
+        uploadInput.addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                selectedFileDiv.innerHTML = "<p>No file selected yet</p>";
+                convertButton.disabled = true;
+                return;
+            }
+            
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (fileExtension !== "pdf") {
+                selectedFileDiv.innerHTML = "<p style='color: #ff6b6b;'>❌ Invalid file type. Please select a PDF file</p>";
+                convertButton.disabled = true;
+                return;
+            }
+            
+            // Display file information
+            selectedFileDiv.innerHTML = `<p>📄 ${file.name}</p><p>Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>`;
+            
+            pdfFile = file;
+            pdfName = file.name.replace('.pdf', '');
+            convertButton.disabled = false;
+            
+            // Hide result container if previously shown
+            resultContainer.style.display = "none";
+        });
+        
+        convertButton.addEventListener("click", async function() {
+            if (!pdfFile) {
+                alert("Please select a PDF file first.");
+                return;
+            }
+            
+            // Show progress UI
+            progressContainer.style.display = "block";
+            progressFill.style.width = "10%";
+            progressText.textContent = "Preparing PDF for conversion...";
+            convertButton.disabled = true;
+            
+            try {
+                await convertPdfToJpg(pdfFile);
+            } catch (error) {
+                console.error("Error:", error);
+                progressText.textContent = "Error: " + (error.message || "Could not convert PDF");
+                progressFill.style.width = "0%";
+                convertButton.disabled = false;
+            }
+        });
+        
+        // Helper function to read file as ArrayBuffer
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        async function convertPdfToJpg(file) {
+            try {
+                // Update progress
+                progressFill.style.width = "20%";
+                progressText.textContent = "Uploading PDF file...";
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    // Send the file to the conversion server with special parameter for PDF to JPG
+                    const response = await axios.post("/convert?to_jpg=true", formData, {
+                        responseType: 'blob',
+                        onUploadProgress: (progressEvent) => {
+                            const percentCompleted = Math.round((progressEvent.loaded * 30) / progressEvent.total) + 20;
+                            progressFill.style.width = percentCompleted + '%';
+                        },
+                        onDownloadProgress: (progressEvent) => {
+                            const percentCompleted = Math.round((progressEvent.loaded * 40) / progressEvent.total) + 50;
+                            progressFill.style.width = Math.min(90, percentCompleted) + '%';
+                            progressText.textContent = "Converting and downloading images...";
+                        }
+                    });
+                    
+                    // Handle successful conversion
+                    const zipBlob = new Blob([response.data], { type: 'application/zip' });
+                    progressFill.style.width = "100%";
+                    progressText.textContent = "Conversion complete!";
+                    
+                    // Set up download button
+                    downloadButton.onclick = function() {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(zipBlob);
+                        link.download = pdfName + "_jpg.zip";
+                        link.click();
+                    };
+                    
+                    // Show result
+                    resultContainer.style.display = "block";
+                    
+                } catch (err) {
+                    // If the server request fails, fall back to browser-based conversion
+                    console.warn("Server conversion failed, falling back to browser-based conversion:", err);
+                    progressText.textContent = "Server conversion unavailable. Using browser-based conversion...";
+                    await convertPdfInBrowser(file);
+                }
+                
+            } catch (error) {
+                console.error("Error in conversion:", error);
+                throw error;
+            }
+        }
+        
+        async function convertPdfInBrowser(file) {
+            try {
+                // Read the PDF file
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                progressFill.style.width = "25%";
+                progressText.textContent = "Reading PDF file...";
+                
+                // Create a hidden canvas for rendering
+                const canvas = document.createElement('canvas');
+                document.body.appendChild(canvas);
+                canvas.style.display = 'none';
+                
+                // Load PDF document using PDF.js
+                const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+                const pdf = await loadingTask.promise;
+                const numPages = pdf.numPages;
+                
+                progressFill.style.width = "30%";
+                progressText.textContent = `PDF loaded. Converting ${numPages} pages...`;
+                
+                // Create a ZIP file to store images
+                const zip = new JSZip();
+                
+                // Convert each page to JPG
+                for (let i = 1; i <= numPages; i++) {
+                    // Update progress
+                    progressFill.style.width = `${30 + ((i-1) / numPages) * 60}%`;
+                    progressText.textContent = `Converting page ${i} of ${numPages}...`;
+                    
+                    // Get the page
+                    const page = await pdf.getPage(i);
+                    
+                    // Determine scale to achieve good resolution
+                    const viewport = page.getViewport({ scale: 2.0 });
+                    
+                    // Set canvas dimensions
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const context = canvas.getContext('2d');
+                    
+                    // Render PDF page to canvas
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    
+                    await page.render(renderContext).promise;
+                    
+                    // Convert canvas to JPEG
+                    const jpgData = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    // Convert data URL to Blob
+                    const byteString = atob(jpgData.split(',')[1]);
+                    const mimeString = jpgData.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    
+                    for (let j = 0; j < byteString.length; j++) {
+                        ia[j] = byteString.charCodeAt(j);
+                    }
+                    
+                    const jpgBlob = new Blob([ab], { type: mimeString });
+                    
+                    // Add to ZIP file
+                    zip.file(`${pdfName}_page_${i}.jpg`, jpgBlob);
+                    
+                    // Store blob reference
+                    convertedJpgBlobs.push({
+                        blob: jpgBlob,
+                        filename: `${pdfName}_page_${i}.jpg`
+                    });
+                }
+                
+                // Remove canvas
+                document.body.removeChild(canvas);
+                
+                // Generate ZIP file
+                progressFill.style.width = "95%";
+                progressText.textContent = "Creating ZIP file with all images...";
+                
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                
+                progressFill.style.width = "100%";
+                progressText.textContent = "Conversion complete!";
+                
+                // Set up download button to download ZIP file
+                downloadButton.onclick = function() {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(zipBlob);
+                    link.download = pdfName + "_jpg.zip";
+                    link.click();
+                };
+                
+                // Show result
+                resultContainer.style.display = "block";
+                
+            } catch (error) {
+                console.error("Error in browser conversion:", error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html> 

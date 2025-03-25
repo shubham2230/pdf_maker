@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to PowerPoint - PDF Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: white;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p.subtitle {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .file-upload-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-upload-container p {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-button:hover {
+            background-color: #3367d6;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .selected-file {
+            margin: 20px 0;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .selected-file p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .convert-button {
+            background-color: #ea4335;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .convert-button:hover {
+            background-color: #d33426;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .convert-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4285f4;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .download-button {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            margin-top: 15px;
+        }
+        
+        .download-button:hover {
+            background-color: #2d9144;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .steps-container {
+            margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .steps-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .steps-list {
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+        
+        .steps-list li {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        
+        .info-box {
+            background-color: rgba(66, 133, 244, 0.2);
+            border-left: 4px solid #4285f4;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .info-box p {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .info-box .note {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-button" onclick="window.location.href='merge-pdf.html'">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button active" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>Convert PDF to PowerPoint</h1>
+        <p class="subtitle">Transform your PDF documents into editable PowerPoint presentations. Perfect for reusing content from PDFs in your presentations.</p>
+        
+        <div class="file-upload-container">
+            <div class="file-input-wrapper">
+                <button class="file-input-button">Select PDF File</button>
+                <input type="file" id="upload" accept=".pdf">
+            </div>
+            
+            <div class="selected-file" id="selected-file">
+                <p>No file selected yet</p>
+            </div>
+            
+            <button class="convert-button" id="convert-button" disabled>Convert to PowerPoint</button>
+            
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Preparing PDF conversion...</div>
+            </div>
+            
+            <div class="result-container" id="result-container">
+                <p>Your PDF has been successfully converted to PowerPoint format!</p>
+                <button class="download-button" id="download-button">Download PowerPoint</button>
+            </div>
+            
+            <div class="info-box">
+                <h3>Important Note</h3>
+                <p>This converter uses a completely browser-based approach for PDF to PowerPoint conversion:</p>
+                <ul style="margin-left: 20px; margin-bottom: 10px;">
+                    <li>Your files never leave your browser - all processing happens locally</li>
+                    <li>Preserves images and page layouts from your PDF</li>
+                    <li>Works even when the server is unavailable</li>
+                    <li>Large PDFs may take longer to process</li>
+                </ul>
+                <p class="note">The conversion uses PDF.js to render PDF pages as images and PptxGenJS to create a PowerPoint file with those images.</p>
+            </div>
+        </div>
+        
+        <div class="steps-container">
+            <h2>How It Works</h2>
+            <ol class="steps-list">
+                <li>Upload your PDF file</li>
+                <li>Your browser renders each page of the PDF</li>
+                <li>Each page is converted to an image and placed on a PowerPoint slide</li>
+                <li>Text is extracted and added as slide notes where possible</li>
+                <li>Download your PowerPoint presentation directly from your browser</li>
+            </ol>
+            <p style="margin-top: 15px; text-align: center;">This tool uses 100% client-side processing - your PDF never leaves your computer.</p>
+        </div>
+    </main>
+    
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <!-- PDF.js for client-side PDF parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    
+    <!-- PptxGenJS for client-side PowerPoint generation -->
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+    
+    <script>
+        // Set PDF.js worker path
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        
+        // Initialize Vanta.js background with waves effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+        
+        // PDF to PowerPoint conversion functionality
+        const uploadInput = document.getElementById("upload");
+        const selectedFileDiv = document.getElementById("selected-file");
+        const convertButton = document.getElementById("convert-button");
+        const progressContainer = document.getElementById("progress-container");
+        const progressFill = document.getElementById("progress-fill");
+        const progressText = document.getElementById("progress-text");
+        const resultContainer = document.getElementById("result-container");
+        const downloadButton = document.getElementById("download-button");
+        
+        let pdfFile = null;
+        let pdfName = "";
+        let pptxInstance = null;
+        
+        uploadInput.addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                selectedFileDiv.innerHTML = "<p>No file selected yet</p>";
+                convertButton.disabled = true;
+                return;
+            }
+            
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (fileExtension !== "pdf") {
+                selectedFileDiv.innerHTML = "<p style='color: #ff6b6b;'>❌ Invalid file type. Please select a PDF file</p>";
+                convertButton.disabled = true;
+                return;
+            }
+            
+            // Display file information
+            selectedFileDiv.innerHTML = `<p>📄 ${file.name}</p><p>Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>`;
+            
+            pdfFile = file;
+            pdfName = file.name.replace('.pdf', '');
+            convertButton.disabled = false;
+            
+            // Hide result container if previously shown
+            resultContainer.style.display = "none";
+        });
+        
+        convertButton.addEventListener("click", async function() {
+            if (!pdfFile) {
+                alert("Please select a PDF file first.");
+                return;
+            }
+            
+            // Show progress UI
+            progressContainer.style.display = "block";
+            progressFill.style.width = "10%";
+            progressText.textContent = "Reading PDF file...";
+            convertButton.disabled = true;
+            
+            try {
+                await convertPdfToPptxClientSide(pdfFile);
+            } catch (error) {
+                console.error("Error:", error);
+                progressText.textContent = "Error: " + (error.message || "Could not convert PDF");
+                progressFill.style.width = "0%";
+                convertButton.disabled = false;
+                
+                // Show detailed error message
+                selectedFileDiv.innerHTML += `
+                    <p style="color: #ff6b6b; margin-top: 10px;">
+                        Error converting PDF: ${error.message || "Unknown error"}
+                        <br>Please try with a different PDF file.
+                    </p>
+                `;
+            }
+        });
+        
+        async function convertPdfToPptxClientSide(file) {
+            try {
+                // Update progress
+                progressFill.style.width = "20%";
+                progressText.textContent = "Loading PDF...";
+                
+                // Read the PDF file
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                
+                // Load PDF using PDF.js
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const numPages = pdf.numPages;
+                
+                // Create new PowerPoint presentation
+                pptxInstance = new PptxGenJS();
+                
+                // Set presentation properties
+                pptxInstance.author = "PDF Maker";
+                pptxInstance.company = "PDF Maker";
+                pptxInstance.subject = "PDF to PowerPoint Conversion";
+                pptxInstance.title = pdfName;
+                
+                // Process each page
+                for (let i = 1; i <= numPages; i++) {
+                    // Update progress
+                    const percentComplete = 20 + Math.floor((i / numPages) * 70);
+                    progressFill.style.width = `${percentComplete}%`;
+                    progressText.textContent = `Converting page ${i} of ${numPages}...`;
+                    
+                    // Get PDF page
+                    const page = await pdf.getPage(i);
+                    
+                    // Convert page to image
+                    const viewport = page.getViewport({ scale: 2.0 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+                    
+                    // Get image data as base64
+                    const imageData = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // Add a new slide with the image
+                    const slide = pptxInstance.addSlide();
+                    slide.addImage({ 
+                        data: imageData, 
+                        x: 0, 
+                        y: 0, 
+                        w: '100%', 
+                        h: '100%',
+                        sizing: { type: 'contain' }
+                    });
+                    
+                    // Try to extract text (optional)
+                    try {
+                        const textContent = await page.getTextContent();
+                        const textItems = textContent.items;
+                        
+                        // Only add text that seems meaningful (longer than 5 chars)
+                        const significantText = textItems
+                            .filter(item => item.str.trim().length > 5)
+                            .map(item => item.str);
+                        
+                        // If we have significant text in the page, add it as notes
+                        if (significantText.length > 0) {
+                            slide.addNotes(significantText.join(' '));
+                        }
+                    } catch (error) {
+                        console.warn('Could not extract text from page:', error);
+                    }
+                }
+                
+                // Update progress
+                progressFill.style.width = "90%";
+                progressText.textContent = "Generating PowerPoint...";
+                
+                // Set up download button
+                downloadButton.onclick = function() {
+                    progressText.textContent = "Saving PowerPoint file...";
+                    pptxInstance.writeFile({ fileName: `${pdfName}.pptx` })
+                        .then(() => {
+                            progressText.textContent = "Conversion complete!";
+                            progressFill.style.width = "100%";
+                        })
+                        .catch(error => {
+                            console.error("Error saving file:", error);
+                            progressText.textContent = "Error saving file.";
+                        });
+                };
+                
+                // Show result
+                progressFill.style.width = "100%";
+                progressText.textContent = "Conversion complete!";
+                resultContainer.style.display = "block";
+                
+            } catch (error) {
+                console.error("Error in conversion:", error);
+                throw error;
+            }
+        }
+        
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+    </script>
+</body>
+</html> 

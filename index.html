@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Maker - Online PDF Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            text-align: center;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .cta-button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cta-button:hover {
+            background-color: #3367d6;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button active">HOME</button>
+            <button class="nav-button" onclick="window.location.href='merge-pdf.html'">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>PDF Tools at Your Fingertips</h1>
+        <p>Easily merge, split, compress, and convert PDF files with our simple, fast, and secure online tools. No installation required - all processing happens in your browser.</p>
+        <div class="cta-buttons">
+            <button class="cta-button" onclick="window.location.href='merge-pdf.html'">Start Merging PDFs</button>
+            <button class="cta-button" onclick="window.location.href='split-pdf.html'">Start Splitting PDFs</button>
+            <button class="cta-button" onclick="window.location.href='compress-pdf.html'">Start Compressing PDFs</button>
+            <button class="cta-button" onclick="window.location.href='convert-pdf.html'">Start Converting PDFs</button>
+        </div>
+    </main>
+    
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <script>
+        // Initialize Vanta.js background with waves effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+    </script>
+</body>
+</html> 

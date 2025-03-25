@@ -1,0 +1,16 @@
+{
+  "name": "pdf-maker",
+  "version": "1.0.0",
+  "description": "Online PDF tools for merging, splitting, compressing and converting PDFs",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve -l 3000 .",
+    "setup": "npm install && npm install --global serve && cp -R ./node_modules/pspdfkit/dist/ ./assets/"
+  },
+  "dependencies": {
+    "file-saver": "^2.0.5",
+    "pdf-lib": "^1.17.1",
+    "pspdfkit": "^2023.3.4",
+    "serve": "^14.2.1"
+  }
+} 

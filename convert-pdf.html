@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert PDF - PDF Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p.subtitle {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .conversion-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 50px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .conversion-section {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .conversion-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .convert-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 20px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+        
+        .convert-button:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .convert-button img {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+        
+        .convert-button span {
+            display: block;
+        }
+        
+        .to-pdf .convert-button {
+            border-color: rgba(66, 133, 244, 0.5);
+        }
+        
+        .to-pdf .convert-button:hover {
+            background-color: rgba(66, 133, 244, 0.2);
+        }
+        
+        .from-pdf .convert-button {
+            border-color: rgba(219, 68, 55, 0.5);
+        }
+        
+        .from-pdf .convert-button:hover {
+            background-color: rgba(219, 68, 55, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .conversion-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .conversion-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-button" onclick="window.location.href='merge-pdf.html'">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button active" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>Convert Files To and From PDF</h1>
+        <p class="subtitle">Choose a conversion option below to get started. Our tools let you convert between PDF and other popular formats instantly.</p>
+        
+        <div class="conversion-container">
+            <section class="conversion-section to-pdf">
+                <h2 class="section-title">Convert to PDF</h2>
+                <div class="conversion-buttons">
+                    <button class="convert-button" onclick="window.location.href='jpg-to-pdf.html'">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0yMSAxOXYtMTRhMiAyIDAgMCAwLTItMmgtMTRhMiAyIDAgMCAwLTIgMnYxNGEyIDIgMCAwIDAgMiAyaDE0YTIgMiAwIDAgMCAyLTJ6bS0xMi0zYy0xLjEgMC0yLS45LTItMnMuOS0yIDItMiAyIC45IDIgMi0uOSAyLTIgMnptNC0xMGgydjJoLTJ2LTJ6bTAgNGgydjJoLTJ2LTJ6bS04IDBoMnYyaC0ydi0yem00LTRoMnYyaC0ydi0yem00IDhoMnYyaC0ydi0yem0tOCAwaDJ2MmgtMnYtMnoiLz48L3N2Zz4=" alt="JPG Icon">
+                        <span>JPG to PDF</span>
+                    </button>
+                    <button class="convert-button" onclick="window.location.href='word-to-pdf.html'">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik02IDJjLTEuMSAwLTIgLjktMiAydjE2YzAgMS4xLjkgMiAyIDJoMTJjMS4xIDAgMi0uOSAyLTJWOGwtNi02SDZ6bTggOHYtNS41bDUuNSA1LjVIMTR6Ii8+PHBhdGggZD0iTTcgMTVoMTB2Mkg3di0yek03IDEyaDEwdjJIN3YtMnpNNyA5aDV2Mkg3VjlaIi8+PC9zdmc+" alt="Word Icon">
+                        <span>Word to PDF</span>
+                    </button>
+                    <button class="convert-button" onclick="window.location.href='ppt-to-pdf.html'">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xOSAzSDVDMy45IDMgMyAzLjkgMyA1djE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnptLTEzIDNoMTB2M0g2VjZ6bTAgMTJINnYtN2gxMHY3SDZ6Ii8+PC9zdmc+" alt="PowerPoint Icon">
+                        <span>PowerPoint to PDF</span>
+                    </button>
+                    <button class="convert-button" onclick="window.location.href='excel-to-pdf.html'">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xOSAzSDVDMy45IDMgMyAzLjkgMyA1djE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnptLTMgMTRINnYtMmgxMHYyek0xNiAxNUg2di0yaDEwdjJ6bTAtNEg2VjdoMTB2NHoiLz48L3N2Zz4=" alt="Excel Icon">
+                        <span>Excel to PDF</span>
+                    </button>
+                </div>
+            </section>
+            
+            <section class="conversion-section from-pdf">
+                <h2 class="section-title">Convert from PDF</h2>
+                <div class="conversion-buttons">
+                    <button class="convert-button" onclick="window.location.href='pdf-to-jpg.html'">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0yMSAxOXYtMTRhMiAyIDAgMCAwLTItMmgtMTRhMiAyIDAgMCAwLTIgMnYxNGEyIDIgMCAwIDAgMiAyaDE0YTIgMiAwIDAgMCAyLTJ6bS0xMi0zYy0xLjEgMC0yLS45LTItMnMuOS0yIDItMiAyIC45IDIgMi0uOSAyLTIgMnptNC0xMGgydjJoLTJ2LTJ6bTAgNGgydjJoLTJ2LTJ6bS04IDBoMnYyaC0ydi0yem00LTRoMnYyaC0ydi0yem00IDhoMnYyaC0ydi0yem0tOCAwaDJ2MmgtMnYtMnoiLz48L3N2Zz4=" alt="JPG Icon">
+                        <span>PDF to JPG</span>
+                    </button>
+                    <button class="convert-button" onclick="alert('PDF to Word conversion coming soon!')">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik02IDJjLTEuMSAwLTIgLjktMiAydjE2YzAgMS4xLjkgMiAyIDJoMTJjMS4xIDAgMi0uOSAyLTJWOGwtNi02SDZ6bTggOHYtNS41bDUuNSA1LjVIMTR6Ii8+PHBhdGggZD0iTTcgMTVoMTB2Mkg3di0yek03IDEyaDEwdjJIN3YtMnpNNyA5aDV2Mkg3VjlaIi8+PC9zdmc+" alt="Word Icon">
+                        <span>PDF to Word</span>
+                    </button>
+                    <button class="convert-button" onclick="window.location.href='pdf-to-pptx.html'">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xOSAzSDVDMy45IDMgMyAzLjkgMyA1djE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnptLTEzIDNoMTB2M0g2VjZ6bTAgMTJINnYtN2gxMHY3SDZ6Ii8+PC9zdmc+" alt="PowerPoint Icon">
+                        <span>PDF to PowerPoint</span>
+                    </button>
+                    <button class="convert-button" onclick="alert('PDF to Excel conversion coming soon!')">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xOSAzSDVDMy45IDMgMyAzLjkgMyA1djE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnptLTMgMTRINnYtMmgxMHYyek0xNiAxNUg2di0yaDEwdjJ6bTAtNEg2VjdoMTB2NHoiLz48L3N2Zz4=" alt="Excel Icon">
+                        <span>PDF to Excel</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <script>
+        // Initialize Vanta.js background with waves effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+    </script>
+</body>
+</html> 

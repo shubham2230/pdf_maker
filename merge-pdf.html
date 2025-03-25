@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge PDF - PDF Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            text-align: center;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .file-upload-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-upload-container p {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-button:hover {
+            background-color: #3367d6;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .selected-files {
+            margin: 20px 0;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .selected-files p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .merge-button {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .merge-button:hover {
+            background-color: #2d8e47;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .merge-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-button active">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>Merge PDF Files</h1>
+        <p>Combine multiple PDF files into a single document. Simply select the PDFs you want to merge and click the button below.</p>
+        
+        <div class="file-upload-container">
+            <div class="file-input-wrapper">
+                <button class="file-input-button">Select PDF Files</button>
+                <input type="file" id="upload" accept="application/pdf" multiple>
+            </div>
+            
+            <div class="selected-files" id="selected-files">
+                <p>No files selected yet</p>
+            </div>
+            
+            <button class="merge-button" id="merge-button" disabled>Merge PDFs</button>
+        </div>
+    </main>
+    
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <!-- PDF merging libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <script>
+        // Initialize Vanta.js background with waves effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+
+        // PDF merging functionality
+        const uploadInput = document.getElementById("upload");
+        const selectedFilesDiv = document.getElementById("selected-files");
+        const mergeButton = document.getElementById("merge-button");
+        
+        uploadInput.addEventListener("change", function (event) {
+            const files = event.target.files;
+            
+            if (files.length === 0) {
+                selectedFilesDiv.innerHTML = "<p>No files selected yet</p>";
+                mergeButton.disabled = true;
+                return;
+            }
+            
+            if (files.length < 2) {
+                selectedFilesDiv.innerHTML = "<p>Please select at least two PDF files.</p>";
+                mergeButton.disabled = true;
+                return;
+            }
+            
+            let fileListHTML = "";
+            let allValidFiles = true;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type !== "application/pdf") {
+                    fileListHTML += `<p style="color: #ff6b6b;">❌ ${file.name} (Invalid file type)</p>`;
+                    allValidFiles = false;
+                } else {
+                    fileListHTML += `<p>📄 ${file.name}</p>`;
+                }
+            }
+            
+            selectedFilesDiv.innerHTML = fileListHTML;
+            mergeButton.disabled = !(files.length >= 2 && allValidFiles);
+        });
+        
+        mergeButton.addEventListener("click", async function () {
+            try {
+                const files = uploadInput.files;
+                
+                if (files.length < 2) {
+                    alert("Please select at least two PDF files.");
+                    return;
+                }
+                
+                // Show loading indication
+                mergeButton.innerText = "Merging...";
+                mergeButton.disabled = true;
+                
+                // Check if PDFLib is available
+                if (typeof PDFLib === 'undefined') {
+                    throw new Error("PDF library not loaded. Please check your internet connection and try again.");
+                }
+                
+                const { PDFDocument } = PDFLib;
+                const mergedPdf = await PDFDocument.create();
+                
+                // Process each file
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type !== "application/pdf") {
+                        continue;
+                    }
+                    
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const pdfDoc = await PDFDocument.load(arrayBuffer);
+                        const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                        
+                        copiedPages.forEach((page) => {
+                            mergedPdf.addPage(page);
+                        });
+                    } catch (fileError) {
+                        console.error(`Error processing file ${file.name}:`, fileError);
+                        throw new Error(`Could not process file ${file.name}. The file may be corrupted or password-protected.`);
+                    }
+                }
+                
+                // Generate merged PDF
+                const mergedPdfBytes = await mergedPdf.save();
+                const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
+                
+                // Save using FileSaver.js
+                if (typeof saveAs !== 'function') {
+                    throw new Error("FileSaver library not loaded. Please check your internet connection and try again.");
+                }
+                
+                saveAs(blob, "merged.pdf");
+                
+                // Reset button state
+                mergeButton.innerText = "Merge PDFs";
+                mergeButton.disabled = false;
+                
+            } catch (error) {
+                console.error("Error during PDF merging:", error);
+                alert("An error occurred while merging the PDF files: " + (error.message || "Unknown error. Please try again."));
+                
+                mergeButton.innerText = "Merge PDFs";
+                mergeButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html> 

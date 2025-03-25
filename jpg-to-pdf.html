@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPG to PDF - PDF Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p.subtitle {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .file-upload-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-upload-container p {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-button:hover {
+            background-color: #3367d6;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .selected-file {
+            margin: 20px 0;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .selected-file p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+        
+        .convert-button {
+            background-color: #ea4335;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .convert-button:hover {
+            background-color: #d33426;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .convert-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4285f4;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .download-button {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            margin-top: 15px;
+        }
+        
+        .download-button:hover {
+            background-color: #2d9144;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .steps-container {
+            margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .steps-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .steps-list {
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+        
+        .steps-list li {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-button" onclick="window.location.href='merge-pdf.html'">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button active" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>Convert JPG to PDF</h1>
+        <p class="subtitle">Upload a JPG image and convert it to a high-quality PDF file. All processing happens in your browser for complete privacy.</p>
+        
+        <div class="file-upload-container">
+            <div class="file-input-wrapper">
+                <button class="file-input-button">Select JPG Image</button>
+                <input type="file" id="upload" accept="image/jpeg,image/jpg">
+            </div>
+            
+            <div class="selected-file" id="selected-file">
+                <p>No file selected yet</p>
+            </div>
+            
+            <img id="image-preview" class="image-preview" alt="Image preview">
+            
+            <button class="convert-button" id="convert-button" disabled>Convert to PDF</button>
+            
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Preparing image conversion...</div>
+            </div>
+            
+            <div class="result-container" id="result-container">
+                <p>Your JPG image has been successfully converted to PDF!</p>
+                <button class="download-button" id="download-button">Download PDF</button>
+            </div>
+        </div>
+        
+        <div class="steps-container">
+            <h2>How It Works</h2>
+            <ol class="steps-list">
+                <li>Upload your JPG image</li>
+                <li>Preview your image to ensure it looks correct</li>
+                <li>Click the "Convert to PDF" button</li>
+                <li>Download your new PDF file</li>
+            </ol>
+            <p style="margin-top: 15px; text-align: center;">Your files are never stored on our servers. All processing happens in your browser for complete privacy.</p>
+        </div>
+    </main>
+    
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <!-- PDF-LIB for client-side PDF creation -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <script>
+        // Initialize Vanta.js background with fountain-like water effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+        
+        // JPG to PDF conversion functionality
+        const uploadInput = document.getElementById("upload");
+        const selectedFileDiv = document.getElementById("selected-file");
+        const imagePreview = document.getElementById("image-preview");
+        const convertButton = document.getElementById("convert-button");
+        const progressContainer = document.getElementById("progress-container");
+        const progressFill = document.getElementById("progress-fill");
+        const progressText = document.getElementById("progress-text");
+        const resultContainer = document.getElementById("result-container");
+        const downloadButton = document.getElementById("download-button");
+        
+        let imageData = null;
+        let imageName = "";
+        
+        uploadInput.addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                selectedFileDiv.innerHTML = "<p>No file selected yet</p>";
+                imagePreview.style.display = "none";
+                convertButton.disabled = true;
+                return;
+            }
+            
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (fileExtension !== "jpg" && fileExtension !== "jpeg") {
+                selectedFileDiv.innerHTML = "<p style='color: #ff6b6b;'>❌ Invalid file type. Please select a JPG image</p>";
+                imagePreview.style.display = "none";
+                convertButton.disabled = true;
+                return;
+            }
+            
+            // Display file information
+            selectedFileDiv.innerHTML = `<p>📷 ${file.name}</p><p>Size: ${(file.size / 1024).toFixed(2)} KB</p>`;
+            
+            // Show image preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = "block";
+                imageData = e.target.result;
+                imageName = file.name;
+                convertButton.disabled = false;
+            };
+            reader.readAsDataURL(file);
+            
+            // Hide result container if previously shown
+            resultContainer.style.display = "none";
+        });
+        
+        convertButton.addEventListener("click", async function() {
+            if (!imageData) {
+                alert("Please select a JPG image first.");
+                return;
+            }
+            
+            // Show progress UI
+            progressContainer.style.display = "block";
+            progressFill.style.width = "0%";
+            progressText.textContent = "Preparing image conversion...";
+            convertButton.disabled = true;
+            
+            try {
+                // Create a simulated progress
+                let progress = 10;
+                progressFill.style.width = `${progress}%`;
+                
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    progressFill.style.width = `${progress}%`;
+                    
+                    if (progress < 30) {
+                        progressText.textContent = "Loading image...";
+                    } else if (progress < 60) {
+                        progressText.textContent = "Creating PDF document...";
+                    } else if (progress < 90) {
+                        progressText.textContent = "Finalizing PDF...";
+                    }
+                    
+                    if (progress >= 100) {
+                        clearInterval(progressInterval);
+                        progressText.textContent = "Conversion complete!";
+                    }
+                }, 100);
+                
+                // Actually convert the image to PDF
+                await convertJpgToPdf(imageData, imageName);
+                
+            } catch (error) {
+                console.error("Error:", error);
+                progressText.textContent = "Error: " + error.message;
+                convertButton.disabled = false;
+            }
+        });
+        
+        async function convertJpgToPdf(imageDataUrl, fileName) {
+            try {
+                // Access the global PDFLib object
+                const { PDFDocument, rgb } = PDFLib;
+                
+                // Create a new PDF document
+                const pdfDoc = await PDFDocument.create();
+                
+                // Load the image
+                const jpgImage = await loadImage(imageDataUrl);
+                const imgData = await fetch(imageDataUrl).then(res => res.arrayBuffer());
+                const jpgImage64 = await pdfDoc.embedJpg(imgData);
+                
+                // Calculate dimensions - maintain aspect ratio but fit to page
+                const pageWidth = 612; // Letter size in points (8.5 x 11 inches)
+                const pageHeight = 792;
+                
+                let imgWidth = jpgImage.width;
+                let imgHeight = jpgImage.height;
+                
+                // Scale down if needed to fit on page with margins
+                const maxWidth = pageWidth - 50; // 25pt margins on each side
+                const maxHeight = pageHeight - 50;
+                
+                if (imgWidth > maxWidth) {
+                    const ratio = maxWidth / imgWidth;
+                    imgWidth = maxWidth;
+                    imgHeight = imgHeight * ratio;
+                }
+                
+                if (imgHeight > maxHeight) {
+                    const ratio = maxHeight / imgHeight;
+                    imgHeight = maxHeight;
+                    imgWidth = imgWidth * ratio;
+                }
+                
+                // Add a page to the PDF
+                const page = pdfDoc.addPage([pageWidth, pageHeight]);
+                
+                // Calculate position to center the image on the page
+                const x = (pageWidth - imgWidth) / 2;
+                const y = (pageHeight - imgHeight) / 2;
+                
+                // Draw the image on the page
+                page.drawImage(jpgImage64, {
+                    x: x,
+                    y: y,
+                    width: imgWidth,
+                    height: imgHeight
+                });
+                
+                // Add metadata
+                pdfDoc.setTitle("Converted JPG to PDF");
+                pdfDoc.setAuthor("PDF Maker");
+                pdfDoc.setCreator("PDF Maker - JPG to PDF Tool");
+                
+                // Serialize the PDF to bytes
+                const pdfBytes = await pdfDoc.save();
+                
+                // Create a blob from the PDF bytes
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                // Show download button
+                downloadButton.onclick = function() {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName.replace(/\.(jpg|jpeg)$/i, '.pdf');
+                    link.click();
+                };
+                
+                // Show result container
+                resultContainer.style.display = "block";
+                
+                // Re-enable convert button after a delay
+                setTimeout(() => {
+                    convertButton.disabled = false;
+                }, 1000);
+                
+            } catch (error) {
+                console.error("Error in conversion:", error);
+                throw error;
+            }
+        }
+        
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+    </script>
+</body>
+</html> 

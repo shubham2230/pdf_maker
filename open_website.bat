@@ -1,0 +1,3 @@
+@echo off
+echo Opening PDF Maker website...
+start "" "index.html" 
