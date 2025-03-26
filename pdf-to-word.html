@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Word - PDF Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: white;
+        }
+        
+        #vanta-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        .vanta-canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: -1 !important;
+        }
+        
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .logo img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-button {
+            background-color: white;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .nav-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+            padding: 50px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .content p.subtitle {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .file-upload-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-upload-container p {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-button:hover {
+            background-color: #3367d6;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .selected-file {
+            margin: 20px 0;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .selected-file p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .convert-button {
+            background-color: #ea4335;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .convert-button:hover {
+            background-color: #d33426;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .convert-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4285f4;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .download-button {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            margin-top: 15px;
+        }
+        
+        .download-button:hover {
+            background-color: #2d9144;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .steps-container {
+            margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .steps-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .steps-list {
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+        
+        .steps-list li {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        
+        .info-box {
+            background-color: rgba(66, 133, 244, 0.2);
+            border-left: 4px solid #4285f4;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .info-box p {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .info-box .note {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <header class="header">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <img src="./image/pdf 2.svg" alt="PDF Maker Logo">
+        </div>
+        <nav class="nav">
+            <button class="nav-button" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-button" onclick="window.location.href='merge-pdf.html'">MERGE PDF</button>
+            <button class="nav-button" onclick="window.location.href='split-pdf.html'">SPLIT PDF</button>
+            <button class="nav-button" onclick="window.location.href='compress-pdf.html'">COMPRESS PDF</button>
+            <button class="nav-button active" onclick="window.location.href='convert-pdf.html'">CONVERT PDF</button>
+        </nav>
+    </header>
+    
+    <main class="content">
+        <h1>Convert PDF to Word</h1>
+        <p class="subtitle">Transform your PDF documents into editable Word files with high accuracy and formatting preservation.</p>
+        
+        <div class="card" style="background-color: rgba(0,0,0,0.6); padding: 40px; text-align: center; border-radius: 10px; max-width: 800px; margin: 0 auto;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px; color: #fff;">Coming Soon</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 20px; color: #fff;">Our PDF to Word conversion feature is currently under development.</p>
+            <p style="font-size: 1.1rem; color: #ddd;">We're working hard to bring you a high-quality PDF to Word converter that will preserve formatting and text editability.</p>
+            <div style="margin-top: 30px;">
+                <i class="fas fa-tools" style="font-size: 3rem; color: #4285f4; margin-bottom: 20px; display: block;"></i>
+                <p style="color: #aaa; font-size: 0.9rem;">Check back soon for updates!</p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Vanta.js dependencies -->
+    <script src="/vanta-master/vendor/three.r134.min.js"></script>
+    <script src="/vanta-master/dist/vanta.waves.min.js"></script>
+    
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <!-- PDF.js for client-side fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
+    
+    <script>
+        // Initialize Vanta.js background with waves effect
+        VANTA.WAVES({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 1200.00,
+            minWidth: 1200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x000000,
+            shininess: 80.00,
+            waveHeight: 30.00,
+            waveSpeed: 1.50,
+            zoom: 0.75,
+            mouseEase: true,
+            forceAnimate: true,
+            backgroundColor: 0x0A0A0A,
+            speed: 1.25,
+            amplitudeFactor: 2.5
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const pdfFileInput = document.getElementById('pdf-file');
+            const fileNameDisplay = document.getElementById('file-name');
+            const convertButton = document.getElementById('convert-button');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const resultContainer = document.getElementById('result-container');
+            const downloadLink = document.getElementById('download-link');
+            const errorContainer = document.getElementById('error-container');
+            const errorText = document.getElementById('error-text');
+
+            // Update file name display when file is selected
+            pdfFileInput.addEventListener('change', function(e) {
+                if (pdfFileInput.files.length > 0) {
+                    fileNameDisplay.textContent = pdfFileInput.files[0].name;
+                    // Enable convert button
+                    convertButton.disabled = false;
+                    convertButton.classList.remove('is-disabled');
+                    // Hide any previous errors
+                    hideError();
+                } else {
+                    fileNameDisplay.textContent = 'Choose a PDF file';
+                }
+            });
+
+            // Handle the conversion process
+            convertButton.addEventListener('click', function() {
+                if (pdfFileInput.files.length === 0) {
+                    showError('Please select a PDF file first.');
+                    return;
+                }
+
+                const file = pdfFileInput.files[0];
+                if (!file.name.toLowerCase().endsWith('.pdf')) {
+                    showError('Please select a valid PDF file.');
+                    return;
+                }
+
+                // Start conversion
+                convertPdfToWord(file);
+            });
+
+            // Function to convert PDF to Word
+            function convertPdfToWord(file) {
+                // Reset UI
+                hideError();
+                resultContainer.classList.add('is-hidden');
+                progressContainer.classList.remove('is-hidden');
+                progressBar.value = 0;
+                progressText.textContent = 'Uploading your PDF...';
+                
+                // Check if server is running
+                checkServerStatus()
+                    .then(isRunning => {
+                        if (!isRunning) {
+                            throw new Error('The conversion server is not running. Please start the server with "python pdf_conversion_server.py".');
+                        }
+                        
+                        return sendFileToServer(file);
+                    })
+                    .then(downloadUrl => {
+                        progressContainer.classList.add('is-hidden');
+                        resultContainer.classList.remove('is-hidden');
+                        downloadLink.href = downloadUrl;
+                        downloadLink.download = file.name.replace('.pdf', '.docx');
+                        
+                        // Auto-trigger the download if automatic download is allowed
+                        setTimeout(() => {
+                            downloadLink.click();
+                        }, 1000);
+                    })
+                    .catch(error => {
+                        console.error('Conversion error:', error);
+                        showError(error.message || 'An error occurred during conversion. Please try again.');
+                    });
+            }
+
+            // Function to check if the server is running
+            function checkServerStatus() {
+                return fetch('http://localhost:8081/status', {
+                    mode: 'cors',
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().then(data => {
+                            console.log('Server status:', data);
+                            return data.status === 'running';
+                        });
+                    }
+                    return false;
+                })
+                .catch(error => {
+                    console.error('Server check error:', error);
+                    return false;
+                });
+            }
+
+            // Function to send file to server
+            function sendFileToServer(file) {
+                return new Promise((resolve, reject) => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const xhr = new XMLHttpRequest();
+                    
+                    // Track upload progress
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percentComplete = Math.round((e.loaded / e.total) * 50); // First 50% is upload
+                            progressBar.value = percentComplete;
+                            progressText.textContent = `Uploading: ${percentComplete}%`;
+                        }
+                    });
+
+                    // Track download progress
+                    xhr.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percentComplete = 50 + Math.round((e.loaded / e.total) * 50); // Last 50% is download
+                            progressBar.value = percentComplete;
+                            progressText.textContent = `Downloading converted file: ${percentComplete}%`;
+                        }
+                    });
+
+                    xhr.addEventListener('load', function() {
+                        console.log('Response status:', xhr.status);
+                        if (xhr.status === 200) {
+                            const blob = new Blob([xhr.response], { 
+                                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                            });
+                            console.log('Blob created:', blob.size, 'bytes');
+                            const url = URL.createObjectURL(blob);
+                            resolve(url);
+                        } else {
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                reject(new Error(errorResponse.error || 'Server error during conversion'));
+                            } catch (e) {
+                                reject(new Error('Failed to convert PDF. Server returned status: ' + xhr.status));
+                            }
+                        }
+                    });
+
+                    xhr.addEventListener('error', function(e) {
+                        console.error('XHR error:', e);
+                        reject(new Error('Could not connect to conversion server. Please ensure the server is running at http://localhost:8081'));
+                    });
+
+                    xhr.addEventListener('abort', function() {
+                        reject(new Error('Conversion was aborted'));
+                    });
+
+                    // Start conversion
+                    xhr.open('POST', 'http://localhost:8081/convert-pdf-to-docx');
+                    xhr.responseType = 'arraybuffer';
+                    xhr.setRequestHeader('Cache-Control', 'no-cache');
+                    xhr.send(formData);
+                    progressText.textContent = 'Processing PDF and extracting text...';
+                });
+            }
+
+            // Show error message
+            function showError(message) {
+                progressContainer.classList.add('is-hidden');
+                errorContainer.classList.remove('is-hidden');
+                errorText.textContent = message;
+            }
+
+            // Hide error message
+            function hideError() {
+                errorContainer.classList.add('is-hidden');
+            }
+        });
+    </script>
+</body>
+</html> 

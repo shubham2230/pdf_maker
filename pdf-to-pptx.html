@@ -325,55 +325,16 @@
     
     <main class="content">
         <h1>Convert PDF to PowerPoint</h1>
-        <p class="subtitle">Transform your PDF documents into editable PowerPoint presentations. Perfect for reusing content from PDFs in your presentations.</p>
+        <p class="subtitle">Transform your PDF documents into editable PowerPoint presentations with high accuracy and visual fidelity.</p>
         
-        <div class="file-upload-container">
-            <div class="file-input-wrapper">
-                <button class="file-input-button">Select PDF File</button>
-                <input type="file" id="upload" accept=".pdf">
+        <div class="card" style="background-color: rgba(0,0,0,0.6); padding: 40px; text-align: center; border-radius: 10px; max-width: 800px; margin: 0 auto;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px; color: #fff;">Coming Soon</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 20px; color: #fff;">Our PDF to PowerPoint conversion feature is currently under development.</p>
+            <p style="font-size: 1.1rem; color: #ddd;">We're working hard to bring you a high-quality PDF to PowerPoint converter that will preserve formatting and allow for presentation editing.</p>
+            <div style="margin-top: 30px;">
+                <i class="fas fa-tools" style="font-size: 3rem; color: #4285f4; margin-bottom: 20px; display: block;"></i>
+                <p style="color: #aaa; font-size: 0.9rem;">Check back soon for updates!</p>
             </div>
-            
-            <div class="selected-file" id="selected-file">
-                <p>No file selected yet</p>
-            </div>
-            
-            <button class="convert-button" id="convert-button" disabled>Convert to PowerPoint</button>
-            
-            <div class="progress-container" id="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <div class="progress-text" id="progress-text">Preparing PDF conversion...</div>
-            </div>
-            
-            <div class="result-container" id="result-container">
-                <p>Your PDF has been successfully converted to PowerPoint format!</p>
-                <button class="download-button" id="download-button">Download PowerPoint</button>
-            </div>
-            
-            <div class="info-box">
-                <h3>Important Note</h3>
-                <p>This converter uses a completely browser-based approach for PDF to PowerPoint conversion:</p>
-                <ul style="margin-left: 20px; margin-bottom: 10px;">
-                    <li>Your files never leave your browser - all processing happens locally</li>
-                    <li>Preserves images and page layouts from your PDF</li>
-                    <li>Works even when the server is unavailable</li>
-                    <li>Large PDFs may take longer to process</li>
-                </ul>
-                <p class="note">The conversion uses PDF.js to render PDF pages as images and PptxGenJS to create a PowerPoint file with those images.</p>
-            </div>
-        </div>
-        
-        <div class="steps-container">
-            <h2>How It Works</h2>
-            <ol class="steps-list">
-                <li>Upload your PDF file</li>
-                <li>Your browser renders each page of the PDF</li>
-                <li>Each page is converted to an image and placed on a PowerPoint slide</li>
-                <li>Text is extracted and added as slide notes where possible</li>
-                <li>Download your PowerPoint presentation directly from your browser</li>
-            </ol>
-            <p style="margin-top: 15px; text-align: center;">This tool uses 100% client-side processing - your PDF never leaves your computer.</p>
         </div>
     </main>
     
@@ -388,9 +349,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     
     <!-- PptxGenJS for client-side PowerPoint generation -->
+    <!-- First load JSZip as it's required by PptxGenJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
     
+    <!-- Tesseract.js for OCR text extraction -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+    
     <script>
+        // Ensure PptxGenJS is available globally (fixes compatibility issues)
+        var PptxGenJS = window.PptxGenJS || window.pptxgen;
+        
         // Set PDF.js worker path
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         
@@ -428,7 +397,7 @@
         
         let pdfFile = null;
         let pdfName = "";
-        let pptxInstance = null;
+        let convertedPptxBlob = null;
         
         uploadInput.addEventListener("change", function(event) {
             const file = event.target.files[0];
@@ -466,11 +435,11 @@
             // Show progress UI
             progressContainer.style.display = "block";
             progressFill.style.width = "10%";
-            progressText.textContent = "Reading PDF file...";
+            progressText.textContent = "Preparing PDF for conversion...";
             convertButton.disabled = true;
             
             try {
-                await convertPdfToPptxClientSide(pdfFile);
+                await convertPdfToPptx(pdfFile);
             } catch (error) {
                 console.error("Error:", error);
                 progressText.textContent = "Error: " + (error.message || "Could not convert PDF");
@@ -487,11 +456,92 @@
             }
         });
         
+        async function convertPdfToPptx(file) {
+            try {
+                // Update progress
+                progressFill.style.width = "20%";
+                progressText.textContent = "Uploading PDF file...";
+                
+                // First try to use the LibreOffice Docker API
+                try {
+                    // Create FormData for the API request
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    console.log("Attempting to connect to LibreOffice Docker API on port 2002...");
+                    progressText.textContent = "Connecting to LibreOffice Docker API...";
+                    
+                    // Try Docker LibreOffice API (port 2002)
+                    const response = await axios.post("http://localhost:2002/convert-to/pptx", formData, {
+                        responseType: 'blob',
+                        timeout: 60000, // 60 second timeout - increased for large files
+                        onUploadProgress: (progressEvent) => {
+                            const percentCompleted = Math.round((progressEvent.loaded * 30) / progressEvent.total) + 20;
+                            progressFill.style.width = percentCompleted + '%';
+                        },
+                        onDownloadProgress: (progressEvent) => {
+                            const percentCompleted = Math.round((progressEvent.loaded * 40) / progressEvent.total) + 50;
+                            progressFill.style.width = Math.min(90, percentCompleted) + '%';
+                            progressText.textContent = "Converting and downloading PowerPoint...";
+                        },
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            'Accept': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+                        }
+                    });
+                    
+                    // Validate response data
+                    if (response.data.byteLength < 2000) {
+                        console.warn("Docker response too small, likely an error response");
+                        throw new Error("Invalid PowerPoint file returned from server");
+                    }
+                    
+                    // Handle successful conversion
+                    convertedPptxBlob = new Blob([response.data], { 
+                        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' 
+                    });
+                    progressFill.style.width = "100%";
+                    progressText.textContent = "Conversion complete!";
+                    
+                    // Set up download button
+                    downloadButton.onclick = function() {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(convertedPptxBlob);
+                        link.download = `${pdfName}.pptx`;
+                        link.click();
+                    };
+                    
+                    // Show result
+                    resultContainer.style.display = "block";
+                    
+                } catch (dockerError) {
+                    // If Docker API fails, fall back to the client-side conversion
+                    console.warn("Docker LibreOffice API failed:", dockerError);
+                    progressText.textContent = "Server conversion unavailable. Using browser-based conversion...";
+                    await convertPdfToPptxClientSide(file);
+                }
+            } catch (error) {
+                console.error("Error in conversion:", error);
+                throw error;
+            }
+        }
+        
+        // Helper function to read file as ArrayBuffer
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        // Client-side PDF to PPTX conversion with OCR
         async function convertPdfToPptxClientSide(file) {
             try {
                 // Update progress
                 progressFill.style.width = "20%";
-                progressText.textContent = "Loading PDF...";
+                progressText.textContent = "Loading PDF in browser...";
                 
                 // Read the PDF file
                 const arrayBuffer = await readFileAsArrayBuffer(file);
@@ -500,106 +550,399 @@
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 const numPages = pdf.numPages;
                 
+                console.log("PDF loaded successfully. Pages:", numPages);
+                progressText.textContent = `PDF loaded successfully (${numPages} pages). Preparing OCR...`;
+                
+                // Initialize Tesseract.js for OCR
+                const worker = await Tesseract.createWorker('eng');
+                console.log("OCR engine initialized");
+                
+                // Check for PptxGenJS library availability
+                console.log("Checking for PptxGenJS:", typeof PptxGenJS);
+                
+                // Ensure that PptxGenJS is loaded
+                if (typeof PptxGenJS === 'undefined') {
+                    // Try to fallback to pptxgen if available
+                    if (typeof pptxgen !== 'undefined') {
+                        console.log("Using pptxgen fallback");
+                        window.PptxGenJS = pptxgen;
+                    } else {
+                        throw new Error("PowerPoint generation library not loaded properly. Please refresh the page and try again.");
+                    }
+                }
+                
                 // Create new PowerPoint presentation
-                pptxInstance = new PptxGenJS();
+                let pptx;
+                try {
+                    console.log("Creating new PptxGenJS instance");
+                    pptx = new PptxGenJS();
+                    console.log("PptxGenJS instance created successfully");
+                } catch (error) {
+                    console.error("Error creating PptxGenJS instance:", error);
+                    throw new Error("Failed to create PowerPoint object: " + error.message);
+                }
                 
                 // Set presentation properties
-                pptxInstance.author = "PDF Maker";
-                pptxInstance.company = "PDF Maker";
-                pptxInstance.subject = "PDF to PowerPoint Conversion";
-                pptxInstance.title = pdfName;
+                pptx.author = "PDF Maker";
+                pptx.company = "PDF Maker";
+                pptx.subject = "PDF to PowerPoint Conversion with OCR";
+                pptx.title = pdfName;
+                
+                // Use 16:9 layout for modern presentations
+                pptx.layout = 'LAYOUT_16x9';
+                
+                // Define colors and styling
+                const TEXT_COLOR = '333333';
+                const ACCENT_COLOR = '4472C4';
+                
+                // Add a title slide
+                const titleSlide = pptx.addSlide();
+                titleSlide.background = { color: 'FFFFFF' };
+                titleSlide.addText(pdfName, { 
+                    x: 0.5, 
+                    y: 1.5, 
+                    w: '90%',
+                    h: 1.5,
+                    fontSize: 36, 
+                    bold: true,
+                    color: TEXT_COLOR,
+                    align: 'center',
+                    fontFace: 'Arial' 
+                });
+                
+                titleSlide.addText('Converted from PDF with OCR text extraction', { 
+                    x: 0.5, 
+                    y: 3.0, 
+                    w: '90%',
+                    fontSize: 18, 
+                    color: '666666',
+                    align: 'center',
+                    fontFace: 'Arial' 
+                });
                 
                 // Process each page
                 for (let i = 1; i <= numPages; i++) {
-                    // Update progress
-                    const percentComplete = 20 + Math.floor((i / numPages) * 70);
-                    progressFill.style.width = `${percentComplete}%`;
-                    progressText.textContent = `Converting page ${i} of ${numPages}...`;
-                    
-                    // Get PDF page
-                    const page = await pdf.getPage(i);
-                    
-                    // Convert page to image
-                    const viewport = page.getViewport({ scale: 2.0 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    
-                    await page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    }).promise;
-                    
-                    // Get image data as base64
-                    const imageData = canvas.toDataURL('image/jpeg', 0.95);
-                    
-                    // Add a new slide with the image
-                    const slide = pptxInstance.addSlide();
-                    slide.addImage({ 
-                        data: imageData, 
-                        x: 0, 
-                        y: 0, 
-                        w: '100%', 
-                        h: '100%',
-                        sizing: { type: 'contain' }
-                    });
-                    
-                    // Try to extract text (optional)
                     try {
-                        const textContent = await page.getTextContent();
-                        const textItems = textContent.items;
+                        // Update progress
+                        const percentComplete = 20 + Math.floor((i / numPages) * 70);
+                        progressFill.style.width = `${percentComplete}%`;
+                        progressText.textContent = `Processing page ${i} of ${numPages} with OCR...`;
                         
-                        // Only add text that seems meaningful (longer than 5 chars)
-                        const significantText = textItems
-                            .filter(item => item.str.trim().length > 5)
-                            .map(item => item.str);
+                        // Get PDF page
+                        const page = await pdf.getPage(i);
                         
-                        // If we have significant text in the page, add it as notes
-                        if (significantText.length > 0) {
-                            slide.addNotes(significantText.join(' '));
+                        // Use a higher scale for better quality images and OCR
+                        const scale = 2.0;  // Higher scale for better OCR results
+                        const viewport = page.getViewport({ scale: scale });
+                        
+                        // Render page to canvas
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        await page.render({
+                            canvasContext: context,
+                            viewport: viewport
+                        }).promise;
+                        
+                        // Get image data for OCR and display
+                        const pageImageData = canvas.toDataURL('image/jpeg', 0.92);
+                        
+                        // Perform OCR on the page image
+                        const { data: { text } } = await worker.recognize(canvas);
+                        console.log(`OCR extracted text from page ${i}:`, text.substring(0, 100) + "...");
+                        
+                        // Clean and process the text
+                        const extractedText = cleanText(text);
+                        
+                        // Split text into lines and paragraphs
+                        const textLines = extractedText.split('\n').filter(line => line.trim().length > 0);
+                        
+                        // Try to identify title and content
+                        let slideTitle = `Page ${i}`;
+                        let contentLines = textLines;
+                        
+                        // If we have text, try to extract a title
+                        if (textLines.length > 0) {
+                            // Use the first substantial line as title (if it seems like a title)
+                            for (let j = 0; j < Math.min(3, textLines.length); j++) {
+                                const line = textLines[j].trim();
+                                if (line.length > 5 && line.length < 60 && 
+                                    line.split(' ').length < 10 && 
+                                    !line.endsWith('.')) {
+                                    slideTitle = line;
+                                    contentLines = textLines.slice(j + 1);
+                                    break;
+                                }
+                            }
                         }
-                    } catch (error) {
-                        console.warn('Could not extract text from page:', error);
+                        
+                        // Create a new slide
+                        const slide = pptx.addSlide();
+                        
+                        // Add background image at low opacity for visual reference
+                        slide.addImage({ 
+                            data: pageImageData, 
+                            x: 0, 
+                            y: 0, 
+                            w: '100%', 
+                            h: '100%',
+                            transparency: 15  // 15% opacity - subtle backdrop
+                        });
+                        
+                        // Add the title
+                        slide.addText(slideTitle, { 
+                            x: 0.5, 
+                            y: 0.5, 
+                            w: '90%',
+                            fontSize: 24,
+                            bold: true,
+                            color: TEXT_COLOR,
+                            fontFace: 'Arial'
+                        });
+                        
+                        // Add content text
+                        if (contentLines.length > 0) {
+                            // Group content lines into paragraphs and bullet points
+                            const paragraphs = [];
+                            const bulletPoints = [];
+                            
+                            let currentParagraph = '';
+                            
+                            for (const line of contentLines) {
+                                const trimmedLine = line.trim();
+                                
+                                // Skip very short or empty lines
+                                if (trimmedLine.length < 3) continue;
+                                
+                                // Check if line looks like a bullet point
+                                if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-') || 
+                                    trimmedLine.startsWith('*') || /^\d+\./.test(trimmedLine)) {
+                                    
+                                    // If we were building a paragraph, finish it first
+                                    if (currentParagraph.length > 0) {
+                                        paragraphs.push(currentParagraph);
+                                        currentParagraph = '';
+                                    }
+                                    
+                                    // Add bullet point (remove the bullet character)
+                                    const bulletText = trimmedLine.replace(/^[•\-\*]|\d+\./, '').trim();
+                                    if (bulletText.length > 0) {
+                                        bulletPoints.push(bulletText);
+                                    }
+                                } 
+                                // If line ends with period, question mark, or exclamation point, it might be end of paragraph
+                                else if (trimmedLine.endsWith('.') || trimmedLine.endsWith('?') || trimmedLine.endsWith('!')) {
+                                    currentParagraph += (currentParagraph.length > 0 ? ' ' : '') + trimmedLine;
+                                    paragraphs.push(currentParagraph);
+                                    currentParagraph = '';
+                                }
+                                // Otherwise, add to current paragraph
+                                else {
+                                    currentParagraph += (currentParagraph.length > 0 ? ' ' : '') + trimmedLine;
+                                }
+                            }
+                            
+                            // Add any remaining paragraph text
+                            if (currentParagraph.length > 0) {
+                                paragraphs.push(currentParagraph);
+                            }
+                            
+                            // Add paragraph text if available
+                            if (paragraphs.length > 0) {
+                                slide.addText(paragraphs.slice(0, 3).join('\n\n'), {
+                                    x: 0.5,
+                                    y: 1.5,
+                                    w: '90%',
+                                    fontSize: 14,
+                                    color: TEXT_COLOR,
+                                    fontFace: 'Arial',
+                                    breakLine: true
+                                });
+                            }
+                            
+                            // Add bullet points if available
+                            if (bulletPoints.length > 0) {
+                                const yPosition = paragraphs.length > 0 ? 3.0 : 1.8;
+                                slide.addText(bulletPoints.slice(0, 5), {
+                                    x: 0.5,
+                                    y: yPosition,
+                                    w: '90%',
+                                    fontSize: 14,
+                                    color: TEXT_COLOR,
+                                    fontFace: 'Arial',
+                                    bullet: { type: 'bullet' }
+                                });
+                            }
+                        }
+                        
+                        // Add page number
+                        slide.addText(`${i}/${numPages}`, {
+                            x: '90%',
+                            y: '95%',
+                            w: '10%',
+                            fontSize: 12,
+                            color: '666666',
+                            align: 'right',
+                            fontFace: 'Arial'
+                        });
+                        
+                    } catch (slideError) {
+                        console.error(`Error creating slide ${i}:`, slideError);
+                        
+                        // Add a fallback image-only slide if OCR fails
+                        try {
+                            const page = await pdf.getPage(i);
+                            const viewport = page.getViewport({ scale: 2.0 });
+                            
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            
+                            await page.render({
+                                canvasContext: context,
+                                viewport: viewport
+                            }).promise;
+                            
+                            const pageImageData = canvas.toDataURL('image/jpeg', 0.92);
+                            
+                            const fallbackSlide = pptx.addSlide();
+                            fallbackSlide.addImage({ 
+                                data: pageImageData, 
+                                x: 0, 
+                                y: 0, 
+                                w: '100%', 
+                                h: '100%',
+                                sizing: { type: 'contain' }
+                            });
+                            
+                            fallbackSlide.addText(`Page ${i} (Image Only)`, {
+                                x: 0.5,
+                                y: 0.3,
+                                fontSize: 14,
+                                color: ACCENT_COLOR,
+                                fontFace: 'Arial',
+                                bold: true
+                            });
+                            
+                            fallbackSlide.addText(`${i}/${numPages}`, {
+                                x: '90%',
+                                y: '95%',
+                                w: '10%',
+                                fontSize: 12,
+                                color: '666666',
+                                align: 'right',
+                                fontFace: 'Arial'
+                            });
+                            
+                        } catch (fallbackError) {
+                            console.error(`Failed to create fallback slide for page ${i}:`, fallbackError);
+                            
+                            // Add a basic error slide as last resort
+                            const errorSlide = pptx.addSlide();
+                            errorSlide.addText(`Page ${i} - Error`, { 
+                                x: 0.5, 
+                                y: 1, 
+                                fontSize: 24, 
+                                bold: true,
+                                color: 'CC0000',
+                                fontFace: 'Arial'
+                            });
+                        }
                     }
                 }
+                
+                // Clean up Tesseract worker
+                await worker.terminate();
+                
+                // Add an info slide at the end
+                const infoSlide = pptx.addSlide();
+                infoSlide.addText('About This Conversion', { 
+                    x: 0.5, 
+                    y: 0.5, 
+                    fontSize: 24, 
+                    bold: true,
+                    color: TEXT_COLOR,
+                    fontFace: 'Arial'
+                });
+                
+                infoSlide.addText([
+                    { text: 'This presentation was created using OCR technology to extract text from a PDF.', options: { bullet: { type: 'number' } } },
+                    { text: 'The text in this presentation is editable.', options: { bullet: { type: 'number' } } },
+                    { text: 'OCR accuracy depends on the quality of the original PDF.', options: { bullet: { type: 'number' } } },
+                    { text: 'You may need to correct some text that was not recognized properly.', options: { bullet: { type: 'number' } } },
+                    { text: 'Images and complex graphics have been preserved in the background.', options: { bullet: { type: 'number' } } }
+                ], { 
+                    x: 0.5, 
+                    y: 1.5, 
+                    w: '90%',
+                    fontSize: 16,
+                    color: TEXT_COLOR,
+                    fontFace: 'Arial'
+                });
                 
                 // Update progress
                 progressFill.style.width = "90%";
                 progressText.textContent = "Generating PowerPoint...";
                 
+                // Get the PPTX as blob
+                console.log("Generating PowerPoint file");
+                let pptxBlob;
+                try {
+                    pptxBlob = await pptx.writeFile({ outputType: 'blob' });
+                    console.log("PowerPoint file generated successfully");
+                } catch (error) {
+                    console.error("Error generating PowerPoint file:", error);
+                    throw new Error("Failed to generate PowerPoint file: " + error.message);
+                }
+                
+                convertedPptxBlob = pptxBlob;
+                
                 // Set up download button
                 downloadButton.onclick = function() {
-                    progressText.textContent = "Saving PowerPoint file...";
-                    pptxInstance.writeFile({ fileName: `${pdfName}.pptx` })
-                        .then(() => {
-                            progressText.textContent = "Conversion complete!";
-                            progressFill.style.width = "100%";
-                        })
-                        .catch(error => {
-                            console.error("Error saving file:", error);
-                            progressText.textContent = "Error saving file.";
-                        });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(convertedPptxBlob);
+                    link.download = `${pdfName}.pptx`;
+                    link.click();
                 };
                 
                 // Show result
                 progressFill.style.width = "100%";
-                progressText.textContent = "Conversion complete!";
+                progressText.textContent = "Conversion complete! Your PowerPoint has editable text from OCR.";
                 resultContainer.style.display = "block";
                 
             } catch (error) {
-                console.error("Error in conversion:", error);
+                console.error("Error in client-side conversion:", error);
                 throw error;
             }
         }
         
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
-            });
+        // Helper function to clean OCR text
+        function cleanText(text) {
+            if (!text) return '';
+            
+            // Replace problematic characters and fix common OCR issues
+            let cleanedText = text
+                // Remove excessive whitespace
+                .replace(/\s+/g, ' ')
+                // Replace long sequences of special characters
+                .replace(/_{3,}/g, ' ___ ')
+                .replace(/\.{3,}/g, ' ... ')
+                .replace(/\-{3,}/g, ' --- ')
+                // Fix common OCR errors
+                .replace(/[\u2018\u2019]/g, "'") // Smart quotes to regular quotes
+                .replace(/[\u201C\u201D]/g, '"') // Smart double quotes to regular quotes
+                .replace(/\u2022/g, '•')        // Unicode bullet to ASCII bullet
+                .replace(/\u2013|\u2014/g, '-')  // Em/en dashes to hyphen
+                .replace(/\u00A9/g, '(c)')      // Copyright symbol
+                .replace(/\u00AE/g, '(R)')      // Registered trademark
+                .replace(/\u2122/g, '(TM)')     // Trademark symbol
+                // Remove other problematic characters
+                .replace(/[^\x20-\x7E\s\n]/g, ''); // Keep only basic ASCII and newlines
+                
+            return cleanedText;
         }
     </script>
 </body>
